@@ -3,7 +3,8 @@ from mmseg.datasets.custom import CustomDataset
 from mmcv import Config
 import os.path as osp
 from mmseg.apis import set_random_seed
-data_root = '/media/yanwe/1414469C7C0E7D26/Data/OAI-ZIB-MRI/dataset_full'
+data_home = '/media/yanwe/1414469C7C0E7D26/Data/'
+data_root = osp.join(data_home,'OAI-ZIB-MRI/dataset_full')
 img_dir = 'img_dir'
 ann_dir = 'ann_dir'
 @DATASETS.register_module()
@@ -28,7 +29,7 @@ cfg.model.decode_head.num_classes = 4
 cfg.model.auxiliary_head.num_classes = 4
 cfg.dataset_type = 'StandfordBackgroundDataset'
 cfg.data_root = data_root
-cfg.data.samples_per_gpu = 3
+cfg.data.samples_per_gpu = 4
 cfg.data.workers_per_gpu= 6
 cfg.img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
@@ -82,8 +83,8 @@ cfg.work_dir = osp.join(data_root,'deeplabv3plus')
 cfg.log_config = dict(
     interval=100, hooks=[dict(type='TextLoggerHook', by_epoch=False),dict(type='TensorboardLoggerHook',by_epoch=False,log_dir=cfg.work_dir) ])
 cfg.runner.max_iters =  int(40480/cfg.data.samples_per_gpu*50)
-cfg.evaluation.interval = 500
-cfg.checkpoint_config.interval = 500
+cfg.evaluation.interval = 2000
+cfg.checkpoint_config.interval = 2000
 cfg.seed = 0
 set_random_seed(0, deterministic=False)
 cfg.gpu_ids = range(1)
