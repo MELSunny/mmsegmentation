@@ -3,7 +3,8 @@ from mmseg.datasets.custom import CustomDataset
 from mmcv import Config
 import os.path as osp
 from mmseg.apis import set_random_seed
-data_root = '/media/yanwe/1414469C7C0E7D26/Data/OAI-ZIB-MRI/dataset_full'
+data_home = '/media/yanwe/1414469C7C0E7D26/Data/'
+data_root = osp.join(data_home,'OAI-ZIB-MRI/dataset_full')
 img_dir = 'img_dir'
 ann_dir = 'ann_dir'
 @DATASETS.register_module()
@@ -81,8 +82,8 @@ cfg.work_dir = osp.join(data_root,'swin')
 cfg.log_config = dict(
     interval=100, hooks=[dict(type='TextLoggerHook', by_epoch=False),dict(type='TensorboardLoggerHook',by_epoch=False,log_dir=cfg.work_dir) ])
 cfg.runner.max_iters =  int(40480/cfg.data.samples_per_gpu*50)
-cfg.evaluation.interval = 500
-cfg.checkpoint_config.interval = 500
+cfg.evaluation.interval = 2000
+cfg.checkpoint_config.interval = 2000
 cfg.seed = 0
 set_random_seed(0, deterministic=False)
 cfg.gpu_ids = range(1)

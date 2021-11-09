@@ -79,7 +79,7 @@ def main():
         for line in f:
             [id,path] = line.strip().split(": ")
             aug_list_dict[id]=path
-    aug_list=list(mmcv.scandir(aug_path, suffix='.mhd'))[:5]
+    aug_list=list(mmcv.scandir(aug_path, suffix='.mhd'))
     for item in aug_list:
         if not item.replace('.segmentation_masks.mhd','') in aug_list_dict:
             raise Exception
