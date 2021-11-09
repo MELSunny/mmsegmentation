@@ -28,7 +28,7 @@ cfg.model.auxiliary_head.num_classes = 4
 cfg.dataset_type = 'StandfordBackgroundDataset'
 cfg.data_root = data_root
 cfg.data.samples_per_gpu = 3
-cfg.data.workers_per_gpu= 3
+cfg.data.workers_per_gpu= 6
 cfg.img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 cfg.crop_size = (512, 512)
@@ -44,7 +44,7 @@ cfg.train_pipeline = [
     dict(type='DefaultFormatBundle'),
     dict(type='Collect', keys=['img', 'gt_semantic_seg']),
 ]
-cfg.test_pipeline = [
+cfg.val_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='MultiScaleFlipAug',
@@ -59,7 +59,8 @@ cfg.test_pipeline = [
             dict(type='Collect', keys=['img']),
         ])
 ]
-
+cfg.test_pipeline=None
+cfg.data.test=None
 cfg.data.train.type = cfg.dataset_type
 cfg.data.train.data_root = cfg.data_root
 cfg.data.train.img_dir = img_dir
@@ -71,23 +72,17 @@ cfg.data.val.type = cfg.dataset_type
 cfg.data.val.data_root = cfg.data_root
 cfg.data.val.img_dir = img_dir
 cfg.data.val.ann_dir = ann_dir
-cfg.data.val.pipeline = cfg.test_pipeline
+cfg.data.val.pipeline = cfg.val_pipeline
 cfg.data.val.split = osp.join(data_root,'2foldCrossValidation-List2.txt')
 
-cfg.data.test.type = cfg.dataset_type
-cfg.data.test.data_root = cfg.data_root
-cfg.data.test.img_dir = img_dir
-cfg.data.test.ann_dir = ann_dir
-cfg.data.test.pipeline = cfg.test_pipeline
-cfg.data.test.split = osp.join(data_root,'2foldCrossValidation-List2.txt')
 
 #cfg.load_from = 'checkpoints/upernet_swin_base_patch4_window12_512x512_160k_ade20k_pretrain_384x384_22K_20210531_125459-429057bf.pth'
 cfg.work_dir = osp.join(data_root,'swin')
 cfg.log_config = dict(
     interval=100, hooks=[dict(type='TextLoggerHook', by_epoch=False),dict(type='TensorboardLoggerHook',by_epoch=False,log_dir=cfg.work_dir) ])
-cfg.runner.max_iters = 674666
-cfg.evaluation.interval = 2000
-cfg.checkpoint_config.interval = 2000
+cfg.runner.max_iters =  int(40480/cfg.data.samples_per_gpu*50)
+cfg.evaluation.interval = 500
+cfg.checkpoint_config.interval = 500
 cfg.seed = 0
 set_random_seed(0, deterministic=False)
 cfg.gpu_ids = range(1)
