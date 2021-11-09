@@ -80,10 +80,10 @@ cfg.data.val.split = osp.join(data_root,'2foldCrossValidation-List2.txt')
 #cfg.load_from = 'checkpoints/deeplabv3plus_r101-d8_512x512_160k_ade20k_20200615_123232-38ed86bb.pth'
 cfg.work_dir = osp.join(data_root,'deeplabv3plus')
 cfg.log_config = dict(
-    interval=50, hooks=[dict(type='TextLoggerHook', by_epoch=False),dict(type='TensorboardLoggerHook',by_epoch=False,log_dir=cfg.work_dir) ])
-cfg.runner.max_iters =  int(480/cfg.data.samples_per_gpu*50)
-cfg.evaluation.interval = 50
-cfg.checkpoint_config.interval = 200
+    interval=100, hooks=[dict(type='TextLoggerHook', by_epoch=False),dict(type='TensorboardLoggerHook',by_epoch=False,log_dir=cfg.work_dir) ])
+cfg.runner.max_iters =  int(40480/cfg.data.samples_per_gpu*50)
+cfg.evaluation.interval = 500
+cfg.checkpoint_config.interval = 500
 cfg.seed = 0
 set_random_seed(0, deterministic=False)
 cfg.gpu_ids = range(1)
