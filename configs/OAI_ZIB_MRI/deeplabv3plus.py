@@ -3,14 +3,15 @@ from mmseg.datasets.custom import CustomDataset
 from mmcv import Config
 import os.path as osp
 from mmseg.apis import set_random_seed
-data_home = '/media/yanwe/1414469C7C0E7D26/Data/'
+data_home = '/home/lincoln/Documents/Data/'
 data_root = osp.join(data_home,'OAI-ZIB-MRI/dataset_full')
 img_dir = 'img_dir'
 ann_dir = 'ann_dir'
 @DATASETS.register_module()
 class StandfordBackgroundDataset(CustomDataset):
-  CLASSES =( 'femoral bone','femoral cartilage','tibial bone','tibial cartilage')
-  PALETTE = [[255, 0, 0],  # Class 1 - Red
+  CLASSES =('background','femoral bone','femoral cartilage','tibial bone','tibial cartilage')
+  PALETTE = [[0, 0, 0],
+             [255, 0, 0],  # Class 1 - Red
              [0, 255, 0],  # Class 2 - Green
              [0, 0, 255],  # Class 3 - Blue
              [255, 255, 0]]  # Class 4 - Yellow
@@ -25,12 +26,12 @@ cfg.norm_cfg = dict(type='BN', requires_grad=True)
 cfg.model.backbone.norm_cfg = cfg.norm_cfg
 cfg.model.decode_head.norm_cfg = cfg.norm_cfg
 cfg.model.auxiliary_head.norm_cfg = cfg.norm_cfg
-cfg.model.decode_head.num_classes = 4
-cfg.model.auxiliary_head.num_classes = 4
+cfg.model.decode_head.num_classes = 5
+cfg.model.auxiliary_head.num_classes = 5
 cfg.dataset_type = 'StandfordBackgroundDataset'
 cfg.data_root = data_root
-cfg.data.samples_per_gpu = 4
-cfg.data.workers_per_gpu= 6
+cfg.data.samples_per_gpu = 8
+cfg.data.workers_per_gpu= 12
 cfg.img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 cfg.crop_size = (512, 512)
@@ -61,8 +62,8 @@ cfg.val_pipeline = [
             dict(type='Collect', keys=['img']),
         ])
 ]
-cfg.test_pipeline=None
-cfg.data.test=None
+cfg.test_pipeline=cfg.val_pipeline
+
 cfg.data.train.type = cfg.dataset_type
 cfg.data.train.data_root = cfg.data_root
 cfg.data.train.img_dir = img_dir
@@ -77,18 +78,22 @@ cfg.data.val.ann_dir = ann_dir
 cfg.data.val.pipeline = cfg.val_pipeline
 cfg.data.val.split = osp.join(data_root,'2foldCrossValidation-List2.txt')
 
+cfg.data.test=cfg.data.val
 
-#cfg.load_from = 'checkpoints/deeplabv3plus_r101-d8_512x512_160k_ade20k_20200615_123232-38ed86bb.pth'
+cfg.load_from = 'checkpoints/deeplabv3plus_r101-d8_512x512_160k_ade20k_20200615_123232-38ed86bb.pth'
 cfg.work_dir = osp.join(data_root,'deeplabv3plus')
 cfg.log_config = dict(
     interval=100, hooks=[dict(type='TextLoggerHook', by_epoch=False),dict(type='TensorboardLoggerHook',by_epoch=False,log_dir=cfg.work_dir) ])
 cfg.runner.max_iters =  int(40480/cfg.data.samples_per_gpu*50)
-cfg.evaluation.interval = 2000
-cfg.checkpoint_config.interval = 2000
+cfg.evaluation.interval = 5060
+cfg.evaluation.metric='mDice',
+cfg.checkpoint_config.interval = 5060
 cfg.seed = 0
 set_random_seed(0, deterministic=False)
 cfg.gpu_ids = range(1)
 
+cfg.optimizer_config = dict(type='Fp16OptimizerHook', loss_scale=512.)
+cfg.fp16 = dict()
 from mmseg.datasets import build_dataset
 from mmseg.models import build_segmentor
 from mmseg.apis import train_segmentor
@@ -101,8 +106,22 @@ model = build_segmentor(
     cfg.model, train_cfg=cfg.get('train_cfg'), test_cfg=cfg.get('test_cfg'))
 # Add an attribute for visualization convenience
 model.CLASSES = datasets[0].CLASSES
-
+model.PALETTE = datasets[0].PALETTE
 # Create work_dir
 mmcv.mkdir_or_exist(osp.abspath(cfg.work_dir))
+with open(osp.join(cfg.work_dir,'cfg.py'), 'w') as cfgout:
+    cfgout.write(cfg.pretty_text)
 train_segmentor(model, datasets, cfg, distributed=False, validate=True,
                 meta=dict())
+
+# checkpoint_file = '/home/lincoln/Documents/Data/OAI-ZIB-MRI/dataset_full/swin_1/iter_24000.pth'
+# image_file= '/home/lincoln/Documents/Data/OAI-ZIB-MRI/dataset_small/img_dir/9001104_128.png'
+# from mmseg.apis import inference_segmentor, init_segmentor, show_result_pyplot
+# from mmcv.runner import load_checkpoint
+# model = init_segmentor(cfg,device='cuda:0')
+# checkpoint = load_checkpoint(model, checkpoint_file, map_location='cpu')
+# model.CLASSES = datasets[0].CLASSES
+# model.PALETTE = datasets[0].PALETTE
+#
+# result = inference_segmentor(model, image_file)
+# show_result_pyplot(model, image_file, result, model.PALETTE )
