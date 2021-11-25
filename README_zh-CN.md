@@ -72,7 +72,6 @@ MMSegmentation 是一个基于 PyTorch 的语义分割开源工具箱。它是 O
 - [x] [UNet (MICCAI'2016/Nat. Methods'2019)](configs/unet)
 - [x] [PSPNet (CVPR'2017)](configs/pspnet)
 - [x] [DeepLabV3 (ArXiv'2017)](configs/deeplabv3)
-- [x] [Mixed Precision (FP16) Training (ArXiv'2017)](configs/fp16)
 - [x] [BiSeNetV1 (ECCV'2018)](configs/bisenetv1)
 - [x] [PSANet (ECCV'2018)](configs/psanet)
 - [x] [DeepLabV3+ (CVPR'2018)](configs/deeplabv3plus)
@@ -161,6 +160,8 @@ MMSegmentation 是一个由来自不同高校和企业的研发人员共同参�
 - [MMEditing](https://github.com/open-mmlab/mmediting): OpenMMLab 图像视频编辑工具箱
 - [MMOCR](https://github.com/open-mmlab/mmocr): OpenMMLab 全流程文字检测识别理解工具包
 - [MMGeneration](https://github.com/open-mmlab/mmgeneration): OpenMMLab 生成模型工具箱
+- [MMFlow](https://github.com/open-mmlab/mmflow): OpenMMLab 光流估计工具箱与测试基准
+- [MMFewShot](https://github.com/open-mmlab/mmfewshot): OpenMMLab 少样本学习工具箱与测试基准
 
 ## 欢迎加入 OpenMMLab 社区
 
