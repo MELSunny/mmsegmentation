@@ -268,8 +268,9 @@ class BaseSegmentor(BaseModule, metaclass=ABCMeta):
             color_seg[seg == label, :] = color
         # convert to BGR
         color_seg = color_seg[..., ::-1]
-
-        img = img * (1 - opacity) + color_seg * opacity
+        binary_obj_mask = color_seg.max(axis=2).astype(bool)
+        img = np.where(~np.stack((binary_obj_mask, binary_obj_mask, binary_obj_mask), axis=2), img,
+                           img * (1 - opacity) + color_seg * opacity)
         img = img.astype(np.uint8)
         # if out_file specified, do not show image in window
         if out_file is not None:
