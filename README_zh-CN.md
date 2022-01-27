@@ -117,6 +117,7 @@ MMSegmentation 是一个基于 PyTorch 的语义分割开源工具箱。它是 O
 - [x] [STDC (CVPR'2021)](configs/stdc)
 - [x] [SETR (CVPR'2021)](configs/setr)
 - [x] [DPT (ArXiv'2021)](configs/dpt)
+- [x] [Segmenter (ICCV'2021)](configs/segmenter)
 - [x] [SegFormer (NeurIPS'2021)](configs/segformer)
 
 已支持的数据集：
@@ -153,7 +154,7 @@ MMSegmentation 是一个基于 PyTorch 的语义分割开源工具箱。它是 O
 
 如果你觉得本项目对你的研究工作有所帮助，请参考如下 bibtex 引用 MMSegmentation。
 
-```latex
+```bibtex
 @misc{mmseg2020,
     title={{MMSegmentation}: OpenMMLab Semantic Segmentation Toolbox and Benchmark},
     author={MMSegmentation Contributors},

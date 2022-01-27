@@ -118,6 +118,7 @@ Supported methods:
 - [x] [STDC (CVPR'2021)](configs/stdc)
 - [x] [SETR (CVPR'2021)](configs/setr)
 - [x] [DPT (ArXiv'2021)](configs/dpt)
+- [x] [Segmenter (ICCV'2021)](configs/segmenter)
 - [x] [SegFormer (NeurIPS'2021)](configs/segformer)
 
 Supported datasets:
@@ -154,7 +155,7 @@ A Colab tutorial is also provided. You may preview the notebook [here](demo/MMSe
 
 If you find this project useful in your research, please consider cite:
 
-```latex
+```bibtex
 @misc{mmseg2020,
     title={{MMSegmentation}: OpenMMLab Semantic Segmentation Toolbox and Benchmark},
     author={MMSegmentation Contributors},
