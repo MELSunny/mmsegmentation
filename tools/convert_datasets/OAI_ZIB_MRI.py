@@ -71,32 +71,35 @@ def main():
         out_dir = osp.join(image_path, '..', '..')
     else:
         out_dir = args.out_dir
-    mmcv.mkdir_or_exist(osp.join(out_dir,'nifti'))
+    if not os.path.exists(osp.join(out_dir,'nifti')):
+        mmcv.mkdir_or_exist(osp.join(out_dir,'nifti'))
+        oai_mri_paths_file= osp.join(aug_path, '..', 'doc','oai_mri_paths.txt')
+        aug_list_dict={}
+        with open(oai_mri_paths_file) as f:
+            for line in f:
+                [id,path] = line.strip().split(": ")
+                aug_list_dict[id]=path
+        aug_list=list(mmcv.scandir(aug_path, suffix='.mhd'))
+        for item in aug_list:
+            if not item.replace('.segmentation_masks.mhd','') in aug_list_dict:
+                raise Exception
+        mmcv.track_parallel_progress(
+            partial(convert_mhd, in_dir=aug_path, out_dir=osp.join(out_dir,'nifti')),
+            aug_list,
+            nproc=nproc)
+        mmcv.track_parallel_progress(
+            partial(convert_dicom, in_dir=image_path, out_dir=osp.join(out_dir,'nifti')),
+            [aug_list_dict[item.replace('.segmentation_masks.mhd','')] for item in aug_list],
+            nproc=nproc)
 
-    oai_mri_paths_file= osp.join(aug_path, '..', 'doc','oai_mri_paths.txt')
-    aug_list_dict={}
-    with open(oai_mri_paths_file) as f:
-        for line in f:
-            [id,path] = line.strip().split(": ")
-            aug_list_dict[id]=path
-    aug_list=list(mmcv.scandir(aug_path, suffix='.mhd'))
-    for item in aug_list:
-        if not item.replace('.segmentation_masks.mhd','') in aug_list_dict:
-            raise Exception
-    mmcv.track_parallel_progress(
-        partial(convert_mhd, in_dir=aug_path, out_dir=osp.join(out_dir,'nifti')),
-        aug_list,
-        nproc=nproc)
-    mmcv.track_parallel_progress(
-        partial(convert_dicom, in_dir=image_path, out_dir=osp.join(out_dir,'nifti')),
-        [aug_list_dict[item.replace('.segmentation_masks.mhd','')] for item in aug_list],
-        nproc=nproc)
-    mmcv.mkdir_or_exist(osp.join(out_dir, 'dataset'))
-    mmcv.mkdir_or_exist(osp.join(out_dir, 'dataset','img_dir'))
-    mmcv.mkdir_or_exist(osp.join(out_dir, 'dataset','ann_dir'))
+    else:
+        print("Found nifti folder")
+        mmcv.mkdir_or_exist(osp.join(out_dir, 'dataset'))
+        mmcv.mkdir_or_exist(osp.join(out_dir, 'dataset','img_dir'))
+        mmcv.mkdir_or_exist(osp.join(out_dir, 'dataset','ann_dir'))
     mmcv.track_parallel_progress(
         partial(convert_nifti, in_dir=osp.join(out_dir,'nifti'), out_dir=osp.join(out_dir,'dataset')),
-        [item.replace('.segmentation_masks.mhd','') for item in aug_list],
+        os.listdir(osp.join(out_dir,'nifti')),
         nproc=nproc)
     image_file_list=os.listdir(osp.join(out_dir, 'dataset','img_dir'))
     list1 = osp.join(aug_path, '..', 'doc', '2foldCrossValidation-List1.txt')
