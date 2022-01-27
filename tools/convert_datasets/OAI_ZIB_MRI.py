@@ -103,8 +103,8 @@ def main():
         partial(convert_nifti, in_dir=osp.join(out_dir,'nifti'), out_dir=osp.join(out_dir,'dataset')),
         os.listdir(osp.join(out_dir,'nifti')),
         nproc=nproc)
-        list1 = osp.join('out_dir', '2foldCrossValidation-List1.txt')
-        list2 = osp.join('out_dir', '2foldCrossValidation-List2.txt')
+        list1 = osp.join(out_dir, '2foldCrossValidation-List1.txt')
+        list2 = osp.join(out_dir, '2foldCrossValidation-List2.txt')
     image_file_list=os.listdir(osp.join(out_dir, 'dataset','img_dir'))
 
 
