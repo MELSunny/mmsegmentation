@@ -54,8 +54,8 @@ def convert_nifti(nifti_file, in_dir, out_dir):
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Convert OAI ZIB MRI annotations to mmsegmentation format')
-    parser.add_argument('image_path', help='OAI ZIB MRI image path')
-    parser.add_argument('aug_path', help='OAI ZIB MRI segmentation_masks path')
+    parser.add_argument('--image_path', help='OAI ZIB MRI image path')
+    parser.add_argument('--aug_path', help='OAI ZIB MRI segmentation_masks path')
     parser.add_argument('-o', '--out_dir', help='output path')
     parser.add_argument(
         '--nproc', default=12, type=int, help='number of process')
