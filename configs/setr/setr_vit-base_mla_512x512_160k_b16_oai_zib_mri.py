@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/models/setr_mla.py', '../_base_/datasets/ade20k.py',
+    '../_base_/models/setr_mla.py', '../_base_/datasets/oai_zib_mri.py',
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_160k.py'
 ]
 norm_cfg = dict(type='SyncBN', requires_grad=True)
