@@ -4,6 +4,7 @@ import warnings
 
 import torch
 import torch.nn as nn
+import torch.utils.checkpoint as cp
 from mmcv.cnn import build_norm_layer
 from mmcv.cnn.bricks.transformer import FFN, MultiheadAttention
 from mmcv.cnn.utils.weight_init import (constant_init, kaiming_init,
@@ -37,6 +38,9 @@ class TransformerEncoderLayer(BaseModule):
             Default: dict(type='GELU').
         norm_cfg (dict): Config dict for normalization layer.
             Default: dict(type='LN').
+        with_cp (bool, optional): Use checkpoint or not. Using checkpoint
+            will save some memory while slowing down the training speed.
+            Default: False.
         batch_first (bool): Key, Query and Value are shape of
             (batch, n, embed_dim)
             or (n, batch, embed_dim). Default: True.
@@ -53,8 +57,11 @@ class TransformerEncoderLayer(BaseModule):
                  qkv_bias=True,
                  act_cfg=dict(type='GELU'),
                  norm_cfg=dict(type='LN'),
+                 with_cp=False,
                  batch_first=True):
         super(TransformerEncoderLayer, self).__init__()
+
+        self.with_cp = with_cp
 
         self.norm1_name, norm1 = build_norm_layer(
             norm_cfg, embed_dims, postfix=1)
@@ -90,8 +97,17 @@ class TransformerEncoderLayer(BaseModule):
         return getattr(self, self.norm2_name)
 
     def forward(self, x):
-        x = self.attn(self.norm1(x), identity=x)
-        x = self.ffn(self.norm2(x), identity=x)
+
+        def _inner_forward(x):
+            x = self.attn(self.norm1(x), identity=x)
+            x = self.ffn(self.norm2(x), identity=x)
+            return x
+
+        if self.with_cp and x.requires_grad:
+            x = cp.checkpoint(_inner_forward, x)
+        else:
+            x = _inner_forward(x)
+
         return x
 
 
@@ -250,6 +266,7 @@ class VisionTransformer(BaseModule):
                     qkv_bias=qkv_bias,
                     act_cfg=act_cfg,
                     norm_cfg=norm_cfg,
+                    with_cp=with_cp,
                     batch_first=True))
 
         self.final_norm = final_norm
