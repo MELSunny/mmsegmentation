@@ -4,6 +4,7 @@ import warnings
 
 import torch
 import torch.nn as nn
+import torch.utils.checkpoint as cp
 from mmcv.cnn import Conv2d, build_activation_layer, build_norm_layer
 from mmcv.cnn.bricks.drop import build_dropout
 from mmcv.cnn.bricks.transformer import MultiheadAttention
@@ -233,6 +234,9 @@ class TransformerEncoderLayer(BaseModule):
             or (n, batch, embed_dim). Default: False.
         init_cfg (dict, optional): Initialization config dict.
             Default:None.
+        with_cp (bool, optional): Use checkpoint or not. Using checkpoint
+            will save some memory while slowing down the training speed.
+            Default: False.
         sr_ratio (int): The ratio of spatial reduction of Efficient Multi-head
             Attention of Segformer. Default: 1.
     """
@@ -248,8 +252,11 @@ class TransformerEncoderLayer(BaseModule):
                  act_cfg=dict(type='GELU'),
                  norm_cfg=dict(type='LN'),
                  batch_first=True,
+                 with_cp=False,
                  sr_ratio=1):
         super(TransformerEncoderLayer, self).__init__()
+
+        self.with_cp = with_cp
 
         # The ret[0] of build_norm_layer is norm name.
         self.norm1 = build_norm_layer(norm_cfg, embed_dims)[1]
@@ -276,8 +283,17 @@ class TransformerEncoderLayer(BaseModule):
             act_cfg=act_cfg)
 
     def forward(self, x, hw_shape):
-        x = self.attn(self.norm1(x), hw_shape, identity=x)
-        x = self.ffn(self.norm2(x), hw_shape, identity=x)
+        def _inner_forward(x):
+            x = self.attn(self.norm1(x), hw_shape, identity=x)
+            x = self.ffn(self.norm2(x), hw_shape, identity=x)
+
+            return x
+
+        if self.with_cp and x.requires_grad:
+            x = cp.checkpoint(_inner_forward, x)
+        else:
+            x = _inner_forward(x)
+
         return x
 
 
@@ -317,6 +333,9 @@ class MixVisionTransformer(BaseModule):
         act_cfg (dict): The activation config for FFNs.
             Default: dict(type='GELU').
         pretrained (str, optional): model pretrained path. Default: None.
+        with_cp (bool, optional): Use checkpoint or not. Using checkpoint
+            will save some memory while slowing down the training speed.
+            Default: False.
         init_cfg (dict or list[dict], optional): Initialization config dict.
             Default: None.
     """
@@ -339,6 +358,7 @@ class MixVisionTransformer(BaseModule):
                  act_cfg=dict(type='GELU'),
                  norm_cfg=dict(type='LN', eps=1e-6),
                  pretrained=None,
+                 with_cp=False,
                  init_cfg=None):
         super(MixVisionTransformer, self).__init__(init_cfg=init_cfg)
 
@@ -392,6 +412,7 @@ class MixVisionTransformer(BaseModule):
                     qkv_bias=qkv_bias,
                     act_cfg=act_cfg,
                     norm_cfg=norm_cfg,
+                    with_cp=with_cp,
                     sr_ratio=sr_ratios[i]) for idx in range(num_layer)
             ])
             in_channels = embed_dims_i
