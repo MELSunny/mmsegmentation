@@ -31,3 +31,4 @@ lr_config = dict(
     by_epoch=False)
 
 data = dict(samples_per_gpu=2, workers_per_gpu=2)
+evaluation = dict(interval=16000, metric='mDice', pre_eval=True)
