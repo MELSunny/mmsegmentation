@@ -34,6 +34,11 @@ def parse_args():
         '--aug-test', action='store_true', help='Use Flip and Multi scale aug')
     parser.add_argument('--out', help='output result file in pickle format')
     parser.add_argument(
+        '--seg-only',
+        action='store_true',
+        help='Only write seg with platte to show-dir'
+    )
+    parser.add_argument(
         '--format-only',
         action='store_true',
         help='Format the output results without perform evaluation. It is'
@@ -261,6 +266,7 @@ def main():
             args.show_dir,
             False,
             args.opacity,
+            seg_only=args.seg_only,
             pre_eval=args.eval is not None and not eval_on_format_results,
             format_only=args.format_only or eval_on_format_results,
             format_args=eval_kwargs)

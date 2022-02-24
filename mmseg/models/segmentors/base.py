@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import torch.distributed as dist
 from mmcv.runner import BaseModule, auto_fp16
-
+from PIL import Image
 
 class BaseSegmentor(BaseModule, metaclass=ABCMeta):
     """Base class for segmentors."""
@@ -217,6 +217,7 @@ class BaseSegmentor(BaseModule, metaclass=ABCMeta):
                     show=False,
                     wait_time=0,
                     out_file=None,
+                    seg_only=False,
                     opacity=0.5):
         """Draw `result` over `img`.
 
@@ -279,7 +280,12 @@ class BaseSegmentor(BaseModule, metaclass=ABCMeta):
         if show:
             mmcv.imshow(img, win_name, wait_time)
         if out_file is not None:
-            mmcv.imwrite(img, out_file)
+            if seg_only == True:
+                im = Image.fromarray(seg.astype(np.uint8))
+                im.putpalette(list(palette.flatten()))
+                im.save(out_file)
+            else:
+                mmcv.imwrite(img, out_file)
 
         if not (show or out_file):
             warnings.warn('show==False and out_file is not specified, only '

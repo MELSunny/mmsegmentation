@@ -39,6 +39,7 @@ def single_gpu_test(model,
                     opacity=0.5,
                     pre_eval=False,
                     format_only=False,
+                    seg_only=False,
                     format_args={}):
     """Test with single GPU by progressive mode.
 
@@ -114,6 +115,7 @@ def single_gpu_test(model,
                     palette=dataset.PALETTE,
                     show=show,
                     out_file=out_file,
+                    seg_only=seg_only,
                     opacity=opacity)
 
         if efficient_test:
