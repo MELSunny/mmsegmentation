@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import torch.distributed as dist
 from mmcv.runner import BaseModule, auto_fp16
-
+from PIL import Image
 
 class BaseSegmentor(BaseModule, metaclass=ABCMeta):
     """Base class for segmentors."""
@@ -188,6 +188,17 @@ class BaseSegmentor(BaseModule, metaclass=ABCMeta):
         loss = sum(_value for _key, _value in log_vars.items()
                    if 'loss' in _key)
 
+        # If the loss_vars has different length, raise assertion error
+        # to prevent GPUs from infinite waiting.
+        if dist.is_available() and dist.is_initialized():
+            log_var_length = torch.tensor(len(log_vars), device=loss.device)
+            dist.all_reduce(log_var_length)
+            message = (f'rank {dist.get_rank()}' +
+                       f' len(log_vars): {len(log_vars)}' + ' keys: ' +
+                       ','.join(log_vars.keys()) + '\n')
+            assert log_var_length == len(log_vars) * dist.get_world_size(), \
+                'loss log variables are different across GPUs!\n' + message
+
         log_vars['loss'] = loss
         for loss_name, loss_value in log_vars.items():
             # reduce loss when distributed training
@@ -206,6 +217,7 @@ class BaseSegmentor(BaseModule, metaclass=ABCMeta):
                     show=False,
                     wait_time=0,
                     out_file=None,
+                    seg_only=False,
                     opacity=0.5):
         """Draw `result` over `img`.
 
@@ -234,8 +246,17 @@ class BaseSegmentor(BaseModule, metaclass=ABCMeta):
         seg = result[0]
         if palette is None:
             if self.PALETTE is None:
+                # Get random state before set seed,
+                # and restore random state later.
+                # It will prevent loss of randomness, as the palette
+                # may be different in each iteration if not specified.
+                # See: https://github.com/open-mmlab/mmdetection/issues/5844
+                state = np.random.get_state()
+                np.random.seed(42)
+                # random palette
                 palette = np.random.randint(
                     0, 255, size=(len(self.CLASSES), 3))
+                np.random.set_state(state)
             else:
                 palette = self.PALETTE
         palette = np.array(palette)
@@ -259,7 +280,12 @@ class BaseSegmentor(BaseModule, metaclass=ABCMeta):
         if show:
             mmcv.imshow(img, win_name, wait_time)
         if out_file is not None:
-            mmcv.imwrite(img, out_file)
+            if seg_only == True:
+                im = Image.fromarray(seg.astype(np.uint8))
+                im.putpalette(list(palette.flatten()))
+                im.save(out_file)
+            else:
+                mmcv.imwrite(img, out_file)
 
         if not (show or out_file):
             warnings.warn('show==False and out_file is not specified, only '

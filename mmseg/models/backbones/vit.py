@@ -4,10 +4,13 @@ import warnings
 
 import torch
 import torch.nn as nn
-from mmcv.cnn import (build_norm_layer, constant_init, kaiming_init,
-                      normal_init, trunc_normal_init)
+import torch.utils.checkpoint as cp
+from mmcv.cnn import build_norm_layer
 from mmcv.cnn.bricks.transformer import FFN, MultiheadAttention
-from mmcv.runner import BaseModule, ModuleList, _load_checkpoint
+from mmcv.cnn.utils.weight_init import (constant_init, kaiming_init,
+                                        trunc_normal_)
+from mmcv.runner import (BaseModule, CheckpointLoader, ModuleList,
+                         load_state_dict)
 from torch.nn.modules.batchnorm import _BatchNorm
 from torch.nn.modules.utils import _pair as to_2tuple
 
@@ -36,6 +39,9 @@ class TransformerEncoderLayer(BaseModule):
             Default: dict(type='GELU').
         norm_cfg (dict): Config dict for normalization layer.
             Default: dict(type='LN').
+        with_cp (bool, optional): Use checkpoint or not. Using checkpoint
+            will save some memory while slowing down the training speed.
+            Default: False.
         batch_first (bool): Key, Query and Value are shape of
             (batch, n, embed_dim)
             or (n, batch, embed_dim). Default: True.
@@ -52,8 +58,11 @@ class TransformerEncoderLayer(BaseModule):
                  qkv_bias=True,
                  act_cfg=dict(type='GELU'),
                  norm_cfg=dict(type='LN'),
+                 with_cp=False,
                  batch_first=True):
         super(TransformerEncoderLayer, self).__init__()
+
+        self.with_cp = with_cp
 
         self.norm1_name, norm1 = build_norm_layer(
             norm_cfg, embed_dims, postfix=1)
@@ -89,8 +98,17 @@ class TransformerEncoderLayer(BaseModule):
         return getattr(self, self.norm2_name)
 
     def forward(self, x):
-        x = self.attn(self.norm1(x), identity=x)
-        x = self.ffn(self.norm2(x), identity=x)
+
+        def _inner_forward(x):
+            x = self.attn(self.norm1(x), identity=x)
+            x = self.ffn(self.norm2(x), identity=x)
+            return x
+
+        if self.with_cp and x.requires_grad:
+            x = cp.checkpoint(_inner_forward, x)
+        else:
+            x = _inner_forward(x)
+
         return x
 
 
@@ -249,6 +267,7 @@ class VisionTransformer(BaseModule):
                     qkv_bias=qkv_bias,
                     act_cfg=act_cfg,
                     norm_cfg=norm_cfg,
+                    with_cp=with_cp,
                     batch_first=True))
 
         self.final_norm = final_norm
@@ -265,7 +284,7 @@ class VisionTransformer(BaseModule):
         if (isinstance(self.init_cfg, dict)
                 and self.init_cfg.get('type') == 'Pretrained'):
             logger = get_root_logger()
-            checkpoint = _load_checkpoint(
+            checkpoint = CheckpointLoader.load_checkpoint(
                 self.init_cfg['checkpoint'], logger=logger, map_location='cpu')
 
             if 'state_dict' in checkpoint:
@@ -286,29 +305,26 @@ class VisionTransformer(BaseModule):
                         (h // self.patch_size, w // self.patch_size),
                         (pos_size, pos_size), self.interpolate_mode)
 
-            self.load_state_dict(state_dict, False)
+            load_state_dict(self, state_dict, strict=False, logger=logger)
         elif self.init_cfg is not None:
             super(VisionTransformer, self).init_weights()
         else:
             # We only implement the 'jax_impl' initialization implemented at
             # https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py#L353  # noqa: E501
-            trunc_normal_init(self.pos_embed, std=.02)
-            trunc_normal_init(self.cls_token, std=.02)
+            trunc_normal_(self.pos_embed, std=.02)
+            trunc_normal_(self.cls_token, std=.02)
             for n, m in self.named_modules():
                 if isinstance(m, nn.Linear):
-                    trunc_normal_init(m.weight, std=.02)
+                    trunc_normal_(m.weight, std=.02)
                     if m.bias is not None:
                         if 'ffn' in n:
-                            normal_init(m.bias, std=1e-6)
+                            nn.init.normal_(m.bias, mean=0., std=1e-6)
                         else:
-                            constant_init(m.bias, 0)
+                            nn.init.constant_(m.bias, 0)
                 elif isinstance(m, nn.Conv2d):
-                    kaiming_init(m.weight, mode='fan_in')
-                    if m.bias is not None:
-                        constant_init(m.bias, 0)
+                    kaiming_init(m, mode='fan_in', bias=0.)
                 elif isinstance(m, (_BatchNorm, nn.GroupNorm, nn.LayerNorm)):
-                    constant_init(m.bias, 0)
-                    constant_init(m.weight, 1.0)
+                    constant_init(m, val=1.0, bias=0.)
 
     def _pos_embeding(self, patched_img, hw_shape, pos_embed):
         """Positiong embeding method.

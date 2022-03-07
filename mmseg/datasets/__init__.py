@@ -6,12 +6,16 @@ from .cityscapes import CityscapesDataset
 from .coco_stuff import COCOStuffDataset
 from .custom import CustomDataset
 from .dark_zurich import DarkZurichDataset
-from .dataset_wrappers import ConcatDataset, RepeatDataset
+from .dataset_wrappers import (ConcatDataset, MultiImageMixDataset,
+                               RepeatDataset)
 from .drive import DRIVEDataset
 from .hrf import HRFDataset
+from .isaid import iSAIDDataset
+from .isprs import ISPRSDataset
 from .loveda import LoveDADataset
 from .night_driving import NightDrivingDataset
 from .pascal_context import PascalContextDataset, PascalContextDataset59
+from .potsdam import PotsdamDataset
 from .stare import STAREDataset
 from .voc import PascalVOCDataset
 from .oai_zib_mri import OAIZIBMRIDataset
@@ -21,6 +25,9 @@ __all__ = [
     'DATASETS', 'build_dataset', 'PIPELINES', 'CityscapesDataset',
     'PascalVOCDataset', 'ADE20KDataset', 'PascalContextDataset',
     'PascalContextDataset59', 'ChaseDB1Dataset', 'DRIVEDataset', 'HRFDataset',
-    'STAREDataset', 'DarkZurichDataset', 'NightDrivingDataset', 'OAIZIBMRIDataset',
-    'COCOStuffDataset', 'LoveDADataset'
+    'STAREDataset', 'DarkZurichDataset', 'NightDrivingDataset',
+    'COCOStuffDataset', 'LoveDADataset', 'MultiImageMixDataset',
+    'ISPRSDataset', 'PotsdamDataset'
+    ,'OAIZIBMRIDataset',
+    'iSAIDDataset', 'ISPRSDataset', 'PotsdamDataset'
 ]
