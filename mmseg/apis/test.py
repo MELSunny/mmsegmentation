@@ -38,8 +38,8 @@ def single_gpu_test(model,
                     efficient_test=False,
                     opacity=0.5,
                     pre_eval=False,
-                    format_only=False,
                     seg_only=False,
+                    format_only=False,
                     format_args={}):
     """Test with single GPU by progressive mode.
 

@@ -263,6 +263,11 @@ class BaseSegmentor(BaseModule, metaclass=ABCMeta):
         assert palette.shape[0] == len(self.CLASSES)
         assert palette.shape[1] == 3
         assert len(palette.shape) == 2
+        if seg_only == True:
+            im = Image.fromarray(seg.astype(np.uint8))
+            im.putpalette(list(palette.flatten()))
+            im.save(out_file)
+            return
         assert 0 < opacity <= 1.0
         color_seg = np.zeros((seg.shape[0], seg.shape[1], 3), dtype=np.uint8)
         for label, color in enumerate(palette):
@@ -280,12 +285,7 @@ class BaseSegmentor(BaseModule, metaclass=ABCMeta):
         if show:
             mmcv.imshow(img, win_name, wait_time)
         if out_file is not None:
-            if seg_only == True:
-                im = Image.fromarray(seg.astype(np.uint8))
-                im.putpalette(list(palette.flatten()))
-                im.save(out_file)
-            else:
-                mmcv.imwrite(img, out_file)
+            mmcv.imwrite(img, out_file)
 
         if not (show or out_file):
             warnings.warn('show==False and out_file is not specified, only '
