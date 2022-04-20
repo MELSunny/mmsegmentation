@@ -13,17 +13,13 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='Convert OAI ZIB MRI annotations to mmsegmentation format')
     parser.add_argument('--show-dir', help='OAI ZIB MRI predict path')
-    parser.add_argument('--nifti-path', help='OAI ZIB MRI segmentation_masks path')
     parser.add_argument('-o', '--out_dir', help='output path')
-    parser.add_argument(
-        '--nproc', default=12, type=int, help='number of process')
     args = parser.parse_args()
     return args
+
 def main():
     args = parse_args()
     show_dir = args.show_dir
-    nifti_path = args.nifti_path
-    nproc = args.nproc
     if args.out_dir is None:
         out_dir = osp.join(show_dir, '..' ,osp.basename(show_dir)+'_nifti')
     else:
@@ -53,5 +49,6 @@ def main():
                 sitk.WriteImage(mask3d_img,osp.join(out_dir,id+'.nii.gz'))
             else:
                 print('Skip '+ id)
+
 if __name__ == '__main__':
     main()

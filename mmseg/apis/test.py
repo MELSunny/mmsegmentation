@@ -117,7 +117,7 @@ def single_gpu_test(model,
                     out_file=out_file,
                     seg_only=seg_only,
                     opacity=opacity)
-        result = [_.astype(np.uint16) for _ in result]
+        result = [_.astype(np.int16) for _ in result]
         if efficient_test:
             result = [np2tmp(_, tmpdir='.efficient_test') for _ in result]
 
