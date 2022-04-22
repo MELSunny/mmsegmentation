@@ -1,10 +1,9 @@
 import argparse
 import os.path as osp
 import os
-import mmcv
-from functools import partial
+
 import SimpleITK as sitk
-from PIL import Image
+
 import numpy as np
 import json
 import pandas as pd
@@ -103,7 +102,7 @@ def main():
         quality[id]=result_classes
 
     result = json.dumps(quality)
-    statisticize(result)
+    statisticize(quality)
 
     f = open(args.out_dir+".json","w")
 
